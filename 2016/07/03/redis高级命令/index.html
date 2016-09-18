@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="记录前进的脚步"><title>redis高级命令 | 凯旋</title><link rel="stylesheet" type="text/css" href="/css/normalize.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="/css/pure-min.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="/css/grids-responsive-min.css?v=0.0.0"><link rel="stylesheet" type="text/css" href="/css/style.css?v=0.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">redis高级命令</h1><a id="logo" href="/.">凯旋</a><p class="description">cayley的博客</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">redis高级命令</h1><div class="post-meta"><i class="fa fa-calendar"> 2016-07-03</i></div><span data-disqus-identifier="2016/07/03/redis高级命令/" class="disqus-comment-count"></span><div class="post-content"><p>redis高级命令：</p>
+<p>订阅：</p>
+<p>1    pusbscribe pattern [pattern …]<br>订阅通道匹配给定的模式。<br>2    pubsub subcommand [argument [argument …]]<br>讲述了PubSub的系统，例如它的客户是活动在服务器上的状态。<br>3    publish channel message<br>发布一条消息到通道。<br>4    punsubscribe  [pattern [pattern …]]<br>停止监听发布到通道匹配给定模式的消息。<br>5    subscribe channel [channel …]<br>监听发布到指定的通道信息。<br>6    unsubscribe [channel [channel …]]<br>停止监听发布给定的通道信息。</p>
+<p>php拓展使用方法：<br><a href="https://github.com/nicolasff/phpredis" target="_blank" rel="external">https://github.com/nicolasff/phpredis</a> pecl扩展包目前只提供了两个接口 publish  subscribe</p>
+<p>phpredis是c写的php模块</p>
+<p><a href="https://github.com/jamm/Memory/blob/master/RedisServer.php" target="_blank" rel="external">https://github.com/jamm/Memory/blob/master/RedisServer.php</a></p>
+<p>php这个是php是基于redis protocol的fsocketopen链接后操作的类库，提供的接口比较全面；publish可以进入数据，但是subscrbie没有阻塞；</p>
+<p>可以在原类包当中修改其加入对阻塞模形的支持；</p>
+<p>发布功能：</p>
+<p>$redis = new Redis();</p>
+<p>$res = $redis-&gt;connect($REDIS_HOSTS[‘CACHE’][‘host’], $REDIS_HOSTS[‘CACHE’][‘port’], 1 );</p>
+<p>$res = $redis-&gt;publish($key,$value);</p>
+<p>定阅功能：                           </p>
+<p>$redis = new Redis();</p>
+<p>$res = $redis-&gt;pconnect($REDIS_HOSTS[‘CACHE’][‘host’], $REDIS_HOSTS[‘CACHE’][‘port’]);</p>
+<p>$res = $redis-&gt;subscribe(array($key),array(‘SinaRedis’,’subscribe_handler’));</p>
+<p>第二个参数为回调方法；</p>
+<p>public static function subscribe_handler($redis, $channel, $msg){</p>
+<pre><code>print_r($redis);
+
+echo $chan;
+
+echo $msg;
+
+return true;
+</code></pre><p>  }</p>
+<p>定阅 redis_subscriber.php</p>
+<p>SinaRedis::subscribe(‘wangbin_test’);</p>
+<p>发布redis_publisher.php</p>
+<p>事务：</p>
+<p>1    discard </p>
+<p>取消事务，放弃执行事务块内的所有命令。</p>
+<p>2    exec</p>
+<p>执行所有事务块内的命令。</p>
+<p>3    multi </p>
+<p>标记一个事务块的开始。</p>
+<p>4     unwatch </p>
+<p>取消 WATCH 命令对所有 key 的监视。</p>
+<p>5    watch key [key …] </p>
+<p>监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打断。</p>
+<p>php扩展使用方法：</p>
+<p>multi, exec, discard.</p>
+<p>$ret = $redis-&gt;multi()</p>
+<pre><code>-&gt;set(&apos;key1&apos;, &apos;val1&apos;)
+
+-&gt;get(&apos;key1&apos;)
+
+-&gt;set(&apos;key2&apos;, &apos;val2&apos;)
+
+-&gt;get(&apos;key2&apos;)
+
+-&gt;exec();
+</code></pre><p>/*</p>
+<p>$ret == array(</p>
+<pre><code>0 =&gt; TRUE,
+
+1 =&gt; &apos;val1&apos;,
+
+2 =&gt; TRUE,
+
+3 =&gt; &apos;val2&apos;);
+</code></pre><p>*/</p>
+<p>watch, unwatch</p>
+<p>$redis-&gt;watch(‘x’); // or for a list of keys: $redis-&gt;watch(array(‘x’,’another key’));</p>
+<p>/<em> long code here during the execution of which other clients could well modify <code>x</code> </em>/</p>
+<p>$ret = $redis-&gt;multi()</p>
+<pre><code>-&gt;incr(&apos;x&apos;)
+
+-&gt;exec();
+</code></pre><p>/*</p>
+<p>$ret = FALSE if x has been modified between the call to WATCH and the call to EXE</p>
+<p>脚本：</p>
+<p>1    eval script numkeys key [key …] arg [arg …] </p>
+<p>执行 Lua 脚本。</p>
+<p>参数说明：</p>
+<p>script： 参数是一段 Lua 5.1 脚本程序。脚本不必(也不应该)定义为一个 Lua 函数。</p>
+<p>numkeys： 用于指定键名参数的个数。</p>
+<p>key [key …]： 从 EVAL 的第三个参数开始算起，表示在脚本中所用到的那些 Redis 键(key)，这些键名参数可以在 Lua 中通过全局变量 KEYS 数组，用 1 为基址的形式访问( KEYS[1] ， KEYS[2] ，以此类推)。</p>
+<p>arg [arg …]： 附加参数，在 Lua 中通过全局变量 ARGV 数组访问，访问的形式和 KEYS 变量类似( ARGV[1] 、 ARGV[2] ，诸如此类)。</p>
+<p>2    evalsha sha1 numkeys key [key …] arg [arg …] </p>
+<p>执行 Lua 脚本。</p>
+<p>3     script exists  script [script …] </p>
+<p>查看指定的脚本是否已经被保存在缓存当中。</p>
+<p>4     scirpt flush</p>
+<p>从脚本缓存中移除所有脚本。</p>
+<p>5    script kill</p>
+<p>杀死当前正在运行的 Lua 脚本。</p>
+<p>6    script load  script </p>
+<p>将脚本 script 添加到脚本缓存中，但并不立即执行这个脚本</p>
+<p>php 扩展的使用方法：</p>
+<p>服务器命令：</p>
+<p>序号    命令及描述</p>
+<p> 1 bgrewriteaof</p>
+<p>异步执行一个 AOF（AppendOnly File） 文件重写操作</p>
+<p>2    bgsave</p>
+<p>在后台异步保存当前数据库的数据到磁盘</p>
+<p>3  client kill  [ip:port] [ID client-id] </p>
+<p>关闭客户端连接</p>
+<p>4    client list</p>
+<p>获取连接到服务器的客户端连接列表</p>
+<p>5   client getname</p>
+<p>获取连接的名称</p>
+<p>6   client pause timeout </p>
+<p>在指定时间内终止运行来自客户端的命令</p>
+<p>7  client setname  connection-name </p>
+<p>设置当前连接的名称</p>
+<p>8  cluster slots</p>
+<p>获取集群节点的映射数组</p>
+<p>9     commad</p>
+<p>获取 Redis 命令详情数组</p>
+<p>10    command count</p>
+<p>获取 Redis 命令总数</p>
+<p>11    command getkeys </p>
+<p>获取给定命令的所有键</p>
+<p>12    time</p>
+<p>返回当前服务器时间</p>
+<p>13    command info  command-name [command-name …] </p>
+<p>获取指定 Redis 命令描述的数组</p>
+<p>14 config get parameter </p>
+<p>获取指定配置参数的值</p>
+<p>15 config rewrite</p>
+<p>对启动 Redis 服务器时所指定的 redis.conf 配置文件进行改写</p>
+<p>16    config set  parameter value </p>
+<p>修改 redis 配置参数，无需重启</p>
+<p>17 config resetstat</p>
+<p>重置 INFO 命令中的某些统计数据</p>
+<p>18    dbsize</p>
+<p>返回当前数据库的 key 的数量</p>
+<p>19  debug object key</p>
+<p>获取 key 的调试信息</p>
+<p>20    debug segfault</p>
+<p>让 Redis 服务崩溃</p>
+<p>21 flushall</p>
+<p>删除所有数据库的所有key</p>
+<p>22    flushdb</p>
+<p>删除当前数据库的所有key</p>
+<p>23    info [section] </p>
+<p>获取 Redis 服务器的各种信息和统计数值</p>
+<p>24 lastsave</p>
+<p>返回最近一次 Redis 成功将数据保存到磁盘上的时间，以 UNIX 时间戳格式表示</p>
+<p>25  monitor</p>
+<p>实时打印出 Redis 服务器接收到的命令，调试用</p>
+<p>26  role</p>
+<p>返回主从实例所属的角色</p>
+<p>27 save</p>
+<p>异步保存数据到硬盘</p>
+<p>28 shutdown [NOSAVE] [SAVE] </p>
+<p>异步保存数据到硬盘，并关闭服务器</p>
+<p>29  slaveof host port </p>
+<p>将当前服务器转变为指定服务器的从属服务器(slave server)</p>
+<p>30  slowlog subcommand [argument] </p>
+<p>管理 redis 的慢日志</p>
+<p>31 sync</p>
+<p>用于复制功能(replication)的内部命令</p>
+</div><a data-url="http://b.miaoxiaohei.com/2016/07/03/redis高级命令/" data-id="cir7uxjv9000ujvi0ukhd54st" class="article-share-link">分享到</a><div class="tags"></div><div class="post-nav"><a href="/2016/07/03/redis安全/" class="pre"><i class="fa fa-caret-left"> redis安全</i></a><a href="/2016/07/03/redis基本命令/" class="next">redis基本命令 <i class="fa fa-caret-right"></i></a></div><div id="disqus_thread"><script>var disqus_shortname = 'cayleyblogs';
+var disqus_identifier = '2016/07/03/redis高级命令/';
+var disqus_title = 'redis高级命令';
+var disqus_url = 'http://b.miaoxiaohei.com/2016/07/03/redis高级命令/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//cayleyblogs.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4"><div id="sidebar"><div class="widget"><form action="//www.baidu.com/baidu" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="search" name="word" maxlength="20" placeholder="Search" class="search-form-input"/><input type="hidden" name="si" value="http://b.miaoxiaohei.com"/><input name="tn" type="hidden" value="bds"/><input name="cl" type="hidden" value="3"/><input name="ct" type="hidden" value="2097152"/><input name="s" type="hidden" value="on"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/liunx/">liunx</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/composer/" style="font-size: 15px;">composer</a> <a href="/tags/https/" style="font-size: 15px;">https</a> <a href="/tags/科学上网/" style="font-size: 15px;">科学上网</a> <a href="/tags/libiconv/" style="font-size: 15px;">libiconv</a> <a href="/tags/yum/" style="font-size: 15px;">yum</a> <a href="/tags/redis/" style="font-size: 15px;">redis</a> <a href="/tags/php/" style="font-size: 15px;">php</a> <a href="/tags/nginx/" style="font-size: 15px;">nginx</a> <a href="/tags/hexo/" style="font-size: 15px;">hexo</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/07/29/路由宝刷机pandorabox后利用自带存储卡/">路由宝刷机pandorabox后利用自带存储卡</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/27/使用ownCloud搭建云盘/">使用ownCloud搭建云盘</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/27/编译安装libiconv库/">编译安装libiconv库</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/27/使用seafile搭建云盘/">使用seafile搭建云盘</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/17/nginx的使用与配置/">nginx的使用与配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/06/nginx安装分析/">nginx安装分析</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/03/redis安全/">redis安全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/03/redis高级命令/">redis高级命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/03/redis基本命令/">redis基本命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/03/redis配置/">redis配置</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//cayleyblogs.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> 友情链接</i></div><ul></ul><a href="http://www.example1.com/" title="site-name1" target="_blank">site-name1</a><ul></ul><a href="http://www.example2.com/" title="site-name2" target="_blank">site-name2</a><ul></ul><a href="http://www.example3.com/" title="site-name3" target="_blank">site-name3</a></div></div></div></div><div id="footer">© <a href="/." rel="nofollow">凯旋.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/jquery.min.js?v=0.0.0"></script><script type="text/javascript" src="/js/totop.js?v=0.0.0"></script><script type="text/javascript" src="/js/fancybox.pack.js?v=0.0.0"></script><script type="text/javascript" src="/js/jquery.fancybox.js?v=0.0.0"></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=0.0.0"><script type="text/javascript" src="/js/share.js?v=0.0.0"></script><script type="text/javascript" src="/js/codeblock-resizer.js?v=0.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=0.0.0"></script></div></body></html>
